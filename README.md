@@ -93,6 +93,7 @@ We expect to validate the significant advantages of this Unix-pipe, JSONL-based 
 ### 10. **Conclusion / Next Steps (Post-Experiment):**
 The primary outcome of this experiment will be a set of learnings and insights to inform the development of the utility commands and supporting tools necessary to make this architectural pattern feasible for production use. Rather than integrating into an existing system, the focus will be on identifying and building the essential utilities and protocols required for robust, composable, and maintainable pipe-based service architectures. Next steps may include:
 *   **Finalizing core utilities:** Complete development and testing of essential tools like `jsonl-wrap` (for integrating arbitrary shell commands into JSONL pipelines) and `load-balancer` (for intelligent worker assignment and distribution).
+*   **Developing a standardized JSONL protocol for service commands:** Create a comprehensive specification defining command structures, response formats, error handling, and control messages that enable services to communicate operational commands (start, stop, configure, health-check) through the same JSONL streaming interface.
 *   Designing standardized JSONL message schemas for common `type` values to ensure interoperability.
 *   Developing additional helper utilities for monitoring, logging, and debugging JSONL-based pipelines.
 *   Creating robust error handling and recovery mechanisms for pipe-based architectures.
