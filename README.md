@@ -52,11 +52,16 @@ Let's break down how each service in this specific pipeline adheres to the propo
 
 #### **General Pipe Protocol Adherence:**
 Beyond this specific pipeline, the experiment will generally ensure:
-*   **JSON Lines (JSONL) Streaming:** All services emit individual JSON objects, each on a single line, leveraging the newline character (`\n`) as the message boundary.
+
+*   **JSON Lines (JSONL) Streaming:** All services emit individual JSON
+objects, each on a single line, leveraging the newline character (`\n`) as the message boundary.
 *   **Message Protocol Rules:** Every JSON object transmitted includes:
     *   **Rule #1: The Essential `"type"` Field (REQUIRED!):** Used by services to decide whether to process, ignore, or just pass the message through.
+
     *   **Rule #2: The Recommended `"correlationId"` (For Tracing):** Used for end-to-end tracing, debugging, and output ordering with parallelism.
+
     *   **Rule #3: The Optional `"workerId"` Field (For Load Balancing):** Used by load-balancer services to assign messages to specific parallel workers, enabling intelligent work distribution and preventing worker starvation.
+
 *   **Processing and Forwarding:** Services inspect the `"type"` field to determine relevance. Additionally, services designed for parallel execution also inspect the `"workerId"` field - if present, the service only processes messages that match its assigned worker ID and ignores all others. Relevant messages are processed and potentially transformed; irrelevant messages are passed through unchanged.
 
 #### **Additional Utilities and Patterns Demonstrated:**
@@ -67,10 +72,15 @@ Beyond this specific pipeline, the experiment will generally ensure:
 ### 7. **Success Criteria:**
 The experiment will be deemed successful if:
 *   The `telegram-input` to `telegram-output` pipeline functions seamlessly, with messages transforming correctly between each service.
+
 *   The `type` and `correlationId` fields effectively enable intelligent filtering, routing (via `capability-dispatcher`), and end-to-end tracing across the chained services.
+
 *   The `parallel` block successfully demonstrates increased throughput for LLM processing tasks.
+
 *   The `jsonl-wrap` utility successfully integrates arbitrary shell commands into the JSONL pipeline.
+
 *   The pipeline exhibits high reconfigurability, allowing changes to service order or inclusion via simple command-line modifications without code redeployment.
+
 *   Long-running systems and persistent servers can be effectively composed using Unix pipes, demonstrating that the architecture supports both batch processing and continuous service orchestration without requiring service restarts or complex deployment procedures.
 
 ### 8. **Potential Challenges / Considerations:**
@@ -83,20 +93,32 @@ The experiment will be deemed successful if:
 ### 9. **Expected Outcome / Learnings:**
 We expect to validate the significant advantages of this Unix-pipe, JSONL-based approach:
 *   **Composability:** Ability to build powerful pipelines by chaining single-responsibility services.
+
 *   **Modularity:** Each service is isolated, allowing independent updates or replacements.
+
 *   **Reconfigurability:** Adjust pipeline structure with simple shell commands, eliminating the need for redeployment or re-architecting.
+
 *   **Efficiency:** JSONL streaming is low-latency and low-memory, supporting infinite or long-lived data streams.
+
 *   **Language Agnosticism:** Any service adhering to the protocol can participate, regardless of implementation language.
+
 *   **Leveraging Existing Knowledge:** Complex systems can be configured and orchestrated using familiar shell scripting tools and techniques, reducing the learning curve and allowing teams to apply existing Unix/Linux administration skills.
+
 *   **Insights into Scaling:** Learnings on effective strategies for both batch and continuous parallelism using standard Unix tools and custom utilities.
 
 ### 10. **Conclusion / Next Steps (Post-Experiment):**
 The primary outcome of this experiment will be a set of learnings and insights to inform the development of the utility commands and supporting tools necessary to make this architectural pattern feasible for production use. Rather than integrating into an existing system, the focus will be on identifying and building the essential utilities and protocols required for robust, composable, and maintainable pipe-based service architectures. Next steps may include:
-*   **Finalizing core utilities:** Complete development and testing of essential tools like `jsonl-wrap` (for integrating arbitrary shell commands into JSONL pipelines) and `load-balancer` (for intelligent worker assignment and distribution).
-*   **Developing a standardized JSONL protocol for service commands:** Create a comprehensive specification defining command structures, response formats, error handling, and control messages that enable services to communicate operational commands (start, stop, configure, health-check) through the same JSONL streaming interface.
+
+*   Finalizing core utilities: Complete development and testing of essential tools like `jsonl-wrap` (for integrating arbitrary shell commands into JSONL pipelines) and `load-balancer` (for intelligent worker assignment and distribution).
+
+*   Developing a standardized JSONL protocol for service commands: Create a comprehensive specification defining command structures, response formats, error handling, and control messages that enable services to communicate operational commands (start, stop, configure, health-check) through the same JSONL streaming interface.
+
 *   Designing standardized JSONL message schemas for common `type` values to ensure interoperability.
+
 *   Developing additional helper utilities for monitoring, logging, and debugging JSONL-based pipelines.
+
 *   Creating robust error handling and recovery mechanisms for pipe-based architectures.
+
 *   Investigating approaches for dynamic service discovery and flexible pipeline orchestration beyond static shell command composition.
 
 ### 11. **References / Related Work:**
