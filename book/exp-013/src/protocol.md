@@ -27,11 +27,23 @@ The header contains metadata about the message. Headers are arbitrary key-value 
 #### id
 The `id` is a unique identifier for the message. This allows services to track messages and ensure they are processed only once. It is also usefule for tracing and debugging.
 
+```ts
+type RequestMessage = {
+  type: string;
+  header: {
+    request: string; // Unique identifier for the request
+    timestamp: string; // ISO 8601 timestamp of when the message was created
+  };
+  body: Record<string, any>; // Actual message content
+};
+```
+
+
 ```json
 {
   "type": "message_type",
   "header": {
-    "id": "unique_id",
+    "request": "unique_id",
     "timestamp": "2023-10-01T12:00:00Z"
   },
   "body": {
@@ -42,44 +54,43 @@ The `id` is a unique identifier for the message. This allows services to track m
 ### Reserved types
 Typically the string used in the top level type key is used to identify what content will be in the body. Therefore protocol messages can be thought of as discriminated unions. The messages you send between your services are therefore defined by you, however there are some reserved types that are used by the system itself.
 
-#### Error
-This message is used to indicate that an error has occurred. It should be sent when a service encounters an error that prevents it from processing a message.
+#### Log
+Messages with log are handled by e13-log service which can be inserted into the pipeline to handle logging. This is useful for debugging and monitoring purposes.
 
 **Type:**
 ```ts
-type ErrorMessage {
-  type: "error";
+type LogMessage {
+  type: "log";
   header: {
-    id: string;
+    request: string;
+    program: string; 
+    context?: string;
     timestamp: string;
   };
   body: {
+    level: "info" | "warn" | "error";
     message: string;
-    code?: string;
     context?: string;
-    stacktrace?: string;
   };
 }
 ```
+
 **Example:**
 ```json
 {
-  "type": "error",
+  "type": "log",
   "header": {
-    "id": "error_123",
+    "id": "log_123",
     "timestamp": "2023-10-01T12:00:00Z"
   },
   "body": {
-    "message": "An error occurred while processing the request.",
-    "code": "500",
-    "context": "Service A",
-    "stacktrace": "Error: Something went wrong at line 42"
+    "level": "info",
+    "message": "Service A started successfully.",
+    "context": "Service A"
   }
 }
 ```
 
-#### Log
-Messages with log are handled by e13-log service which can be inserted into the pioeline to handle logging. This is useful for debugging and monitoring purposes.
 
 
 # Suggested Tooling
