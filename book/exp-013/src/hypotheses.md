@@ -7,10 +7,10 @@ Unix philosolophy says to do one thing and do it well, and while this was the pr
 Experiment 13 (exp-013) proposes composable services that communicate using a simple protocol based on Unix pipes. This allows services to be composed together in a flexible and dynamic way, without the need for complex configuration something like this:
 
 ```bash
-telegram-input \
+telegram-in \
 | auth-service \
 | capability-dispatcher --capabilities 'canned-responder;llm-responder' \
 | load-balancer --workers 4 \
 | parallel --jobs 4 --pipe --line-buffer 'llm-proxy | response-formatter' \
-| telegram-output
+| telegram-out
 ```

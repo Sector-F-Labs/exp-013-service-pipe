@@ -27,17 +27,17 @@ All findings, unexpected outcomes, performance observations, and debugging insig
 The core of this experiment will be proven by implementing and observing the following Telegram bot backend pipeline:
 
 ```bash
-telegram-input \
+telegram-in \
 | auth-service \
 | capability-dispatcher --capabilities 'canned-responder;llm-responder' \
 | load-balancer --workers 4 \
 | parallel --jobs 4 --pipe --line-buffer 'llm-proxy | response-formatter' \
-| telegram-output
+| telegram-out
 ```
 
 Let's break down how each service in this specific pipeline adheres to the proposed pipe protocol and contributes to the overall goals:
 
-*   **`telegram-input`:** This service acts as the initial ingress point. It will receive incoming messages from the Telegram API, convert them into JSONL format, assign a unique `correlationId` to each request, and set an initial `type` (e.g., `"type": "telegram_message"`). It streams these JSONL messages to `stdout`.
+*   **`telegram-in`:** This service acts as the initial ingress point. It receives `IncomingMessage` objects from Kafka (produced by Ratatoskr) and converts them into the Exp13 JSONL format.
 *   **`auth-service`:** This service consumes JSONL messages (e.g., `type: "telegram_message"`). It performs authentication/authorization checks. If successful, it passes the message through, potentially enriching it with user details or changing its `type` (e.g., `"type": "authenticated_request"`). If authentication fails, it might emit an error message and/or drop the original message, demonstrating filtering.
 *   **`capability-dispatcher --capabilities 'canned-responder;llm-responder'`:** This is a key component demonstrating the "Centralized Capability Dispatcher" pattern. It receives `authenticated_request` messages, inspects their content (e.g., user query), and based on predefined logic or `--capabilities` arguments, determines the appropriate next step. It then transforms the message's `type` (e.g., to `"type": "canned_response_request"` or `"type": "llm_request"`) and streams it onward. Messages not matching a capability are passed through unchanged.
 *   **`load-balancer --workers 4`:** This service assigns worker IDs to incoming messages to ensure proper distribution across parallel workers. It receives messages (e.g., `type: "llm_request"`) and adds a `workerId` field (0-3) using round-robin or hash-based assignment. This ensures that parallel workers can identify which messages are intended for them to process, enabling more sophisticated load distribution than simple line-based splitting.
@@ -47,8 +47,18 @@ Let's break down how each service in this specific pipeline adheres to the propo
     *   `gnu parallel` will read these worker-assigned `llm_request` messages line by line (`--pipe --line-buffer`). For each incoming `llm_request`, it will launch a new instance (up to 4 concurrent jobs) of the sub-pipeline:
         *   **`llm-proxy`:** This service receives `llm_request` JSONL messages, makes the actual API call to the LLM (e.g., Gemini, Ollama), and wraps the LLM's raw output back into a JSONL message (e.g., `type: "llm_raw_response"`), preserving the `correlationId`. This service might involve significant startup costs, making persistent workers (though not directly used here with `parallel`'s per-job process model) a consideration for future iteration.
         *   **`response-formatter`:** This service takes `llm_raw_response` messages, processes/formats the LLM's output into a user-friendly format, and sets the final `type` (e.g., `"type": "final_telegram_response"`).
-    *   `gnu parallel` collects outputs from all concurrent `llm-proxy | response-formatter` sub-pipelines before streaming to `telegram-output`.
-*   **`telegram-output`:** This final service receives JSONL messages (e.g., `type: "final_telegram_response"`). It converts the structured JSONL data back into a Telegram message format and sends it to the original user via the Telegram API, completing the loop.
+    *   `gnu parallel` collects outputs from all concurrent `llm-proxy | response-formatter` sub-pipelines before streaming to `telegram-out`.
+*   **`telegram-out`:** This final service reads Exp13 messages of type `telegram_out` and publishes them as `OutgoingMessage` objects to Kafka for Ratatoskr to deliver to Telegram.
+
+#### **Environment Variables for Telegram Adapters**
+The Kafka connection details are provided through the following variables:
+
+* `KAFKA_BROKERS` – comma-separated list of broker addresses
+* `KAFKA_IN_TOPIC` – topic from which `telegram-in` consumes (default: `telegram_in`)
+* `KAFKA_OUT_TOPIC` – topic to which `telegram-out` publishes (default: `telegram_out`)
+
+An example message is provided at `telegram-out/example.jsonl`.
+Run `cat telegram-out/example.jsonl | telegram-out` to quickly test the adapter.
 
 #### **General Pipe Protocol Adherence:**
 Beyond this specific pipeline, the experiment will generally ensure:
@@ -71,7 +81,7 @@ objects, each on a single line, leveraging the newline character (`\n`) as the m
 
 ### 7. **Success Criteria:**
 The experiment will be deemed successful if:
-*   The `telegram-input` to `telegram-output` pipeline functions seamlessly, with messages transforming correctly between each service.
+*   The `telegram-in` to `telegram-out` pipeline functions seamlessly, with messages transforming correctly between each service.
 
 *   The `type` and `correlationId` fields effectively enable intelligent filtering, routing (via `capability-dispatcher`), and end-to-end tracing across the chained services.
 

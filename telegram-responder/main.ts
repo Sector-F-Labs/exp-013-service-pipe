@@ -1,3 +1,7 @@
+export function add(a: number, b: number): number {
+  return a + b;
+}
+
 const lines = Deno.stdin.readable
   .pipeThrough(new TextDecoderStream());
 
@@ -10,7 +14,8 @@ type ServicePipeMessage = {
   };
 };
 
-for await (const line of lines) {
+if (import.meta.main) {
+  for await (const line of lines) {
   let parsed: ServicePipeMessage | undefined;
   try {
     parsed = JSON.parse(line.trim()) as ServicePipeMessage;
@@ -52,5 +57,6 @@ for await (const line of lines) {
     };
     const formatted = JSON.stringify(errorMessage) + "\n";
     console.error(formatted);
+  }
   }
 }
