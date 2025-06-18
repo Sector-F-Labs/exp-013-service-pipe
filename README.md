@@ -57,8 +57,8 @@ The Kafka connection details are provided through the following variables:
 * `KAFKA_IN_TOPIC` – topic from which `telegram-in` consumes (default: `telegram_in`)
 * `KAFKA_OUT_TOPIC` – topic to which `telegram-out` publishes (default: `telegram_out`)
 
-An example message is provided at `telegram-out/example.json`.
-Run `cat telegram-out/example.json | telegram-out` to quickly test the adapter.
+An example message is provided at `telegram-out/example.jsonl`.
+Run `cat telegram-out/example.jsonl | telegram-out` to quickly test the adapter.
 
 #### **General Pipe Protocol Adherence:**
 Beyond this specific pipeline, the experiment will generally ensure:
