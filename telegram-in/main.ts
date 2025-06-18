@@ -1,3 +1,5 @@
+import { Kafka } from "npm:kafkajs";
+
 export interface IncomingMessage {
   message_type: unknown;
   timestamp: string;
@@ -22,7 +24,7 @@ export function toExp13(msg: IncomingMessage): Exp13Message {
       timestamp: msg.timestamp,
     },
     body: msg,
-  };
+  }; 
 }
 
 async function* readLines(reader: { read(p: Uint8Array): Promise<number | null> }): AsyncIterable<string> {
@@ -44,28 +46,62 @@ async function* readLines(reader: { read(p: Uint8Array): Promise<number | null> 
   }
 }
 
+async function consumeKafka() {
+  const brokers = (Deno.env.get("KAFKA_BROKERS") || "").split(",").filter(Boolean);
+  const topic = Deno.env.get("KAFKA_IN_TOPIC") || "telegram_in";
+  if (brokers.length === 0) throw new Error("KAFKA_BROKERS not set");
+  const kafka = new Kafka({ brokers });
+  const consumer = kafka.consumer({ groupId: "telegram-in" });
+  await consumer.connect();
+  await consumer.subscribe({ topic });
+  await consumer.run({
+    eachMessage: async ({ message }) => {
+      if (!message.value) return;
+      try {
+        const msg = JSON.parse(message.value.toString()) as IncomingMessage;
+        const out = toExp13(msg);
+        console.log(JSON.stringify(out));
+      } catch (err) {
+        console.error(
+          JSON.stringify({
+            type: "log",
+            header: {
+              request: crypto.randomUUID(),
+              program: "telegram-in",
+              timestamp: new Date().toISOString(),
+            },
+            body: { level: "error", message: (err as Error).message },
+          }),
+        );
+      }
+    },
+  });
+}
+
 if (import.meta.main) {
-  for await (const line of readLines(Deno.stdin)) {
-    if (line.trim().length === 0) continue;
-    try {
-      const msg = JSON.parse(line) as IncomingMessage;
-      const out = toExp13(msg);
-      console.log(JSON.stringify(out));
-    } catch (err) {
-      console.error(
-        JSON.stringify({
-          type: "log",
-          header: {
-            request: crypto.randomUUID(),
-            program: "telegram-in",
-            timestamp: new Date().toISOString(),
-          },
-          body: {
-            level: "error",
-            message: (err as Error).message,
-          },
-        }),
-      );
+  const brokers = Deno.env.get("KAFKA_BROKERS");
+  if (brokers) {
+    await consumeKafka();
+  } else {
+    for await (const line of readLines(Deno.stdin)) {
+      if (line.trim().length === 0) continue;
+      try {
+        const msg = JSON.parse(line) as IncomingMessage;
+        const out = toExp13(msg);
+        console.log(JSON.stringify(out));
+      } catch (err) {
+        console.error(
+          JSON.stringify({
+            type: "log",
+            header: {
+              request: crypto.randomUUID(),
+              program: "telegram-in",
+              timestamp: new Date().toISOString(),
+            },
+            body: { level: "error", message: (err as Error).message },
+          }),
+        );
+      }
     }
   }
 }

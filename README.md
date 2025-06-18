@@ -50,6 +50,13 @@ Let's break down how each service in this specific pipeline adheres to the propo
     *   `gnu parallel` collects outputs from all concurrent `llm-proxy | response-formatter` sub-pipelines before streaming to `telegram-out`.
 *   **`telegram-out`:** This final service reads Exp13 messages of type `telegram_out` and publishes them as `OutgoingMessage` objects to Kafka for Ratatoskr to deliver to Telegram.
 
+#### **Environment Variables for Telegram Adapters**
+The Kafka connection details are provided through the following variables:
+
+* `KAFKA_BROKERS` – comma-separated list of broker addresses
+* `KAFKA_IN_TOPIC` – topic from which `telegram-in` consumes (default: `telegram_in`)
+* `KAFKA_OUT_TOPIC` – topic to which `telegram-out` publishes (default: `telegram_out`)
+
 #### **General Pipe Protocol Adherence:**
 Beyond this specific pipeline, the experiment will generally ensure:
 
