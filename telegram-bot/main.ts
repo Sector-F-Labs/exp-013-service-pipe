@@ -1,6 +1,7 @@
-import { Bot, Context } from "npm:grammy";
+export function add(a: number, b: number): number {
+  return a + b;
+}
 
-const apiKey = Deno.env.get("API_KEY");
 
 type ServicePipeMessage = {
   type: string;
@@ -21,7 +22,7 @@ type ErrorMessage = {
   };
 };
 
-const handleUnixConnection = async (bot: Bot<Context>, conn: Deno.Conn) => {
+const handleUnixConnection = async (bot: any, conn: Deno.Conn) => {
   //read from the connection
   const decoder = new TextDecoder();
   const buffer = new Uint8Array(1024);
@@ -40,6 +41,9 @@ const handleUnixConnection = async (bot: Bot<Context>, conn: Deno.Conn) => {
 };
 
 if (import.meta.main) {
+  const { Bot } = await import("npm:grammy");
+  const apiKey = Deno.env.get("API_KEY");
+
   if (apiKey === undefined) {
     const errorMessage: ErrorMessage = {
       type: "error",
@@ -50,8 +54,8 @@ if (import.meta.main) {
     console.log(JSON.stringify(errorMessage));
     Deno.exit(1);
   }
-  const bot = new Bot<Context>(apiKey);
-  bot.on("message", (ctx) => {
+  const bot = new Bot(apiKey);
+  bot.on("message", (ctx: any) => {
     const message = {
       type: "telegram-bot-in",
       body: {

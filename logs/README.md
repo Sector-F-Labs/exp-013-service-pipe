@@ -45,7 +45,7 @@ Links to relevant code, configuration files, or commits.
 ### Date & Context
 - **Date:** 2025-05-31
 - **Engineer(s):** Divan Visagie, Denny Sims
-- **Pipeline Configuration:** telegram-input | auth-service | capability-dispatcher | load-balancer --workers 4 | parallel --jobs 4
+- **Pipeline Configuration:** telegram-in | auth-service | capability-dispatcher | load-balancer --workers 4 | parallel --jobs 4
 
 ### Objective
 Test initial pipeline setup with 4 parallel workers processing LLM requests.
