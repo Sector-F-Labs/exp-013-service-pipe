@@ -1,0 +1,12 @@
+{
+  "type": "telegram_out",
+  "header": {
+    "request": "example-request-id",
+    "timestamp": "2025-06-20T12:00:00Z"
+  },
+  "body": {
+    "message_type": { "type": "TextMessage", "data": { "text": "hello" } },
+    "timestamp": "2025-06-20T12:00:00Z",
+    "target": { "platform": "telegram" }
+  }
+}
