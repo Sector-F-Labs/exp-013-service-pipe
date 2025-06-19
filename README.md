@@ -41,8 +41,11 @@ flowchart LR
   A[telegram-in] --> B[auth-service]
   B --> C[capability-dispatcher]
   C --> D[load-balancer]
-  D --> E[parallel\nllm-proxy | response-formatter]
-  E --> F[telegram-out]
+  D --> P
+  subgraph P[parallel]
+    E[llm-proxy] --> F[response-formatter]
+  end
+  P --> G[telegram-out]
 ```
 
 #### telegram-in
